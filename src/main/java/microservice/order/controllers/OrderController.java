@@ -21,12 +21,8 @@ public class OrderController {
 
     @PostMapping("/create")
     public ResponseEntity<OrderResponseDTO> createOrder(@Valid @RequestBody OrderRequestDTO orderRequestDTO) {
-        try{
-            OrderResponseDTO productResponseDTO = orderService.createOrder(orderRequestDTO);
-            return new ResponseEntity<>(productResponseDTO, HttpStatus.CREATED);
-        } catch (ApplicationException e) {
-            throw new ApplicationException(" Ha ocurrido un error en el campo " + e.getCampo() + ", Descripcion: "+e.getMessage());
-        }
+        OrderResponseDTO productResponseDTO = orderService.createOrder(orderRequestDTO);
+        return new ResponseEntity<>(productResponseDTO, HttpStatus.CREATED);
     }
 
     @PutMapping("/updateStatus")

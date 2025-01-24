@@ -8,6 +8,8 @@ import microservice.order.models.Order;
 import microservice.order.models.OrderItem;
 import microservice.order.repositories.OrderRepository;
 import microservice.order.services.OrderService;
+import microservice.order.utils.ProductClient;
+import microservice.order.utils.UserClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -24,14 +26,27 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private OrderMapper orderMapper;
 
+    @Autowired
+    private UserClient userClient;
+
+    @Autowired
+    private ProductClient productClient;
+
     @Override
     public OrderResponseDTO createOrder(OrderRequestDTO orderRequestDTO) {
 
+        //userClient.validateUser(orderRequestDTO.userId());
+
+        Long userId = userClient.validateUserEmail(orderRequestDTO.email());
+
+        productClient.reserveStock(orderRequestDTO.orders());
+
         Order order = new Order();
-        order.setUserId(orderRequestDTO.userId());
+        //order.setUserId(orderRequestDTO.userId());
+        order.setUserId(userId);
         order.setStatus(Status.PENDING);
 
-        List<OrderItem> orderItems = orderRequestDTO.orders().stream()
+        Set<OrderItem> orderItems = orderRequestDTO.orders().stream()
                 .map(orderItemRequestDTO -> {
                     OrderItem orderItem = new OrderItem(
                             orderItemRequestDTO.productId(),
@@ -40,10 +55,11 @@ public class OrderServiceImpl implements OrderService {
                     orderItem.setOrder(order);
                     return orderItem;
                 })
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
 
         order.setOrderItemList(orderItems);
         orderRepository.save(order);
+
         return orderMapper.toResponseDTO(order);
     }
 
@@ -51,6 +67,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderUpdateDTO updateOrderStatus(OrderUpdateDTO orderUpdateDTO) {
         Order order = orderRepository.findById(orderUpdateDTO.id())
                 .orElseThrow(() -> new EntityNotFoundException("El ID del orden no fue encontrado"));
+
         if(orderUpdateDTO.status() != null) {
             order.setStatus(orderUpdateDTO.status());
         }

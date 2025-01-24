@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import microservice.order.enums.Status;
 
-import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter @Setter
@@ -16,7 +16,7 @@ public class Order {
     private Long id;
     private Long userId;
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<OrderItem> orderItemList;
+    private Set<OrderItem> orderItemList;
     @Enumerated(EnumType.STRING)
     private Status status;
 }
