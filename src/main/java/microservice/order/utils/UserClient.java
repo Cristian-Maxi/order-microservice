@@ -13,7 +13,7 @@ public class UserClient {
     private RestTemplate restTemplate;
 
     public void validateUser(Long userId) {
-        String url = "http://localhost:8080/api/user/validateUser/{id}";
+        String url = "http://getaway/api/user/validateUser/{id}";
         try {
             restTemplate.getForObject(url, Void.class, userId);
         } catch (HttpClientErrorException.NotFound e) {
@@ -22,7 +22,7 @@ public class UserClient {
     }
 
     public Long validateUserEmail(String email) {
-        String url = "http://localhost:8080/api/user/validateUserByEmail/{email}";
+        String url = "http://getaway/api/user/validateUserByEmail/{email}";
         try {
             return restTemplate.getForObject(url, Long.class, email);
         } catch (HttpClientErrorException.NotFound e) {
