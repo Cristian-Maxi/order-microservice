@@ -1,6 +1,7 @@
 package microservice.order.services.impl;
 
 import jakarta.persistence.EntityNotFoundException;
+import microservice.order.config.RabbitMQConfig;
 import microservice.order.dtos.OrderDTO.*;
 import microservice.order.enums.Status;
 import microservice.order.mappers.OrderMapper;
@@ -8,8 +9,10 @@ import microservice.order.models.Order;
 import microservice.order.models.OrderItem;
 import microservice.order.repositories.OrderRepository;
 import microservice.order.services.OrderService;
+import microservice.order.utils.OrderCreatedEvent;
 import microservice.order.utils.ProductClient;
 import microservice.order.utils.UserClient;
+import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,17 +35,17 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private ProductClient productClient;
 
+    @Autowired
+    private AmqpTemplate amqpTemplate;
+
     @Override
     public OrderResponseDTO createOrder(OrderRequestDTO orderRequestDTO) {
-
-        //userClient.validateUser(orderRequestDTO.userId());
 
         Long userId = userClient.validateUserEmail(orderRequestDTO.email());
 
         productClient.reserveStock(orderRequestDTO.orders());
 
         Order order = new Order();
-        //order.setUserId(orderRequestDTO.userId());
         order.setUserId(userId);
         order.setStatus(Status.PENDING);
 
@@ -58,9 +61,20 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toSet());
 
         order.setOrderItemList(orderItems);
-        orderRepository.save(order);
 
-        return orderMapper.toResponseDTO(order);
+        Order savedOrder = orderRepository.save(order);
+
+        OrderCreatedEvent event = new OrderCreatedEvent(
+                savedOrder.getId(),
+                savedOrder.getUserId(),
+                orderItems.stream()
+                        .map(item -> new OrderCreatedEvent.OrderItemDetails(item.getProductId(), item.getQuantity()))
+                        .collect(Collectors.toList())
+        );
+        event.setEmail(orderRequestDTO.email());
+        amqpTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, event);
+
+        return orderMapper.toResponseDTO(savedOrder);
     }
 
     @Override
