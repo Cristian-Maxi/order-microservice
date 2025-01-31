@@ -9,7 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 @RestController
@@ -21,8 +24,12 @@ public class OrderController {
 
     @PostMapping("/create")
     public ResponseEntity<OrderResponseDTO> createOrder(@Valid @RequestBody OrderRequestDTO orderRequestDTO) {
-        OrderResponseDTO productResponseDTO = orderService.createOrder(orderRequestDTO);
-        return new ResponseEntity<>(productResponseDTO, HttpStatus.CREATED);
+        try {
+            OrderResponseDTO orderResponseDTO = orderService.createOrder(orderRequestDTO);
+            return new ResponseEntity<>(orderResponseDTO, HttpStatus.CREATED);
+        } catch (ApplicationException e) {
+            throw new ApplicationException("Ha ocurrido un error " + e.getMessage());
+        }
     }
 
     @PutMapping("/updateStatus")

@@ -8,6 +8,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
@@ -20,7 +21,7 @@ public class ProductClient {
     private RestTemplate restTemplate;
 
     public void reserveStock(Set<OrderItemRequestDTO> items) {
-        String url = "http://getaway/api/product/reserve-stock";
+        String url = "http://product/api/product/reserve-stock";
         try {
             restTemplate.postForObject(url, items, Void.class);
         } catch (HttpClientErrorException e) {
@@ -29,39 +30,59 @@ public class ProductClient {
     }
 
     public Map<Long, String> getProductNames(Set<Long> productIds) {
-        String url = "http://getaway/api/product/names";
+        String url = "http://product/api/product/names";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<Set<Long>> requestEntity = new HttpEntity<>(productIds, headers);
 
-        ResponseEntity<Map<Long, String>> response = restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                requestEntity,
-                new ParameterizedTypeReference<Map<Long, String>>() {}
-        );
+        try {
+            ResponseEntity<Map<Long, String>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    requestEntity,
+                    new ParameterizedTypeReference<Map<Long, String>>() {}
+            );
 
-        return response.getBody();
+            if (response.getBody() == null || response.getBody().isEmpty()) {
+                throw new ApplicationException("No se encontraron nombres para los productos solicitados.");
+            }
+
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            throw new ApplicationException("Error al obtener nombres de productos: " + e.getResponseBodyAsString());
+        } catch (RestClientException e) {
+            throw new ApplicationException("Error de conexión con el servicio de productos.");
+        }
     }
 
     public Map<Long, ProductDTO> getProductDetails(Set<Long> productIds) {
-        String url = "http://getaway/api/product/details";
+        String url = "http://product/api/product/details";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<Set<Long>> requestEntity = new HttpEntity<>(productIds, headers);
 
-        ResponseEntity<Map<Long, ProductDTO>> response = restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                requestEntity,
-                new ParameterizedTypeReference<Map<Long, ProductDTO>>() {}
-        );
+        try {
+            ResponseEntity<Map<Long, ProductDTO>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    requestEntity,
+                    new ParameterizedTypeReference<Map<Long, ProductDTO>>() {}
+            );
 
-        return response.getBody();
+            if (response.getBody() == null || response.getBody().isEmpty()) {
+                throw new ApplicationException("No se encontraron nombres para los productos solicitados.");
+            }
+
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            throw new ApplicationException("Error al obtener nombres de productos: " + e.getResponseBodyAsString());
+        } catch (RestClientException e) {
+            throw new ApplicationException("Error de conexión con el servicio de productos.");
+        }
     }
     
 }

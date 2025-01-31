@@ -17,6 +17,7 @@ import microservice.order.utils.UserClient;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -42,6 +43,7 @@ public class OrderServiceImpl implements OrderService {
     private AmqpTemplate amqpTemplate;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public OrderResponseDTO createOrder(OrderRequestDTO orderRequestDTO) {
 
         Long userId = userClient.validateUserEmail(orderRequestDTO.email());
@@ -81,29 +83,10 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toSet());
     }
 
-//    private void publishOrderCreatedEvent(Order savedOrder, Set<OrderItem> orderItems, String email) {
-//        // Obtener los nombres de los productos del microservicio de productos
-//        Map<Long, String> productNames = productClient.getProductNames(
-//                orderItems.stream().map(OrderItem::getProductId).collect(Collectors.toSet())
-//        );
-//
-//        OrderCreatedEvent event = new OrderCreatedEvent(
-//                savedOrder.getId(),
-//                savedOrder.getUserId(),
-//                orderItems.stream()
-//                        .map(item -> new OrderCreatedEvent.OrderItemDetails(
-//                                item.getProductId(),
-//                                productNames.getOrDefault(item.getProductId(), "Desconocido"),
-//                                item.getQuantity()))
-//                        .collect(Collectors.toList())
-//        );
-//
-//        event.setEmail(email);
-//        amqpTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, event);
-//    }
-
     private void publishOrderCreatedEvent(Order savedOrder, Set<OrderItem> orderItems, String email) {
-        Set<Long> productIds = orderItems.stream().map(OrderItem::getProductId).collect(Collectors.toSet());
+        Set<Long> productIds = orderItems.stream()
+                .map(OrderItem::getProductId)
+                .collect(Collectors.toSet());
 
         Map<Long, ProductDTO> productDetails = productClient.getProductDetails(productIds);
 

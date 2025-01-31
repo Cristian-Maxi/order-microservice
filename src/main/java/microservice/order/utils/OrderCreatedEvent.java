@@ -13,16 +13,6 @@ public class OrderCreatedEvent {
     private String email;
     private List<OrderItemDetails> orderItems;
 
-//    @Data
-//    @NoArgsConstructor
-//    @AllArgsConstructor
-//    public static class OrderItemDetails {
-//        private Long productId;
-//        private String productName;
-//        private Integer quantity;
-//
-//    }
-
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
